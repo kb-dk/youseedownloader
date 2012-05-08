@@ -1,7 +1,7 @@
 File yousee.cgi is a yousee-simulator for testing. It resides on yousee@canopus.
 
 Download testfile from the yousee-simulator like this:
-curl http://canopus/yousee/DR1_20111123_212500_20111123_214500.mux
+curl --remote-name http://canopus/yousee/DR1_20111123_212500_20111123_214500.mux
 
 Download real files from the real YouSee server like this:
-curl -remote-name http://username:password@<IP>/DR1_20120410_112500_20120410_113000.mux
+curl --remote-name http://username:password@<IP>/DR1_20120410_112500_20120410_113000.mux
