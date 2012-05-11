@@ -3,7 +3,7 @@
 MUX=DR1_20111123_212500_20111123_214500.mux
 
 case "$PATH_INFO" in
-    /DR1_*)
+    /DR*)
 	echo "Content-type: application/octet-stream"
 	echo
 	cat $MUX
