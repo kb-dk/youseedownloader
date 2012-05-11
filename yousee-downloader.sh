@@ -67,10 +67,10 @@ fi
 echo 'YouSee-downloader failed:' >&2
 echo "$ERRORS" >&2
 echo "URL: $YOUSEE_URL_TO_FILE" >&2
-echo
-echo "Guide to YouSee error codes: (you got ${ERROR_CODE})"
-echo '400 = Bad information in URL (for instance, unknown channel id)'
-echo '410 = Content is not available on any archive server'
+echo ""  >&2
+echo "Guide to YouSee error codes: (you got ${ERROR_CODE})" >&2
+echo '400 = Bad information in URL (for instance, unknown channel id)' >&2
+echo '410 = Content is not available on any archive server' >&2
 rm "${LOCALPATH}/${LOCALNAME}" >/dev/null 2>/dev/null
 rm "${LOCALPATH}/${LOCALNAME}.md5" >/dev/null 2>/dev/null
 exit 13
