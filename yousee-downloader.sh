@@ -54,7 +54,7 @@ if [ "$ERROR_CODE" -eq "404" ]; then
 	echo '{'
 	echo "   \"queued\":"
 	echo '   {'
-	echo "      \"youseeName\" : $YOUSEENAME"
+	echo "      \"youseeName\" : ${YOUSEENAME},"
 	echo "      \"localName\" : $LOCALNAME"
 	echo '   }'
 	echo '}'
