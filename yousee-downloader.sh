@@ -17,7 +17,6 @@ source $CONFIGFILE
 URL_TO_YOUSEE=${URL_TO_YOUSEE%/}  # remove trailing slash if there is one
 LOCALPATH=${LOCALPATH%/}  # remove trailing slash if there is one
 YOUSEE_URL_TO_FILE="${URL_TO_YOUSEE}/${YOUSEENAME}"
-echo $YOUSEE_URL_TO_FILE
 
 # Relevant curl options:
 # -f  To make HTTP errors turn into a curl error 22, mentioning the HTTP error number
