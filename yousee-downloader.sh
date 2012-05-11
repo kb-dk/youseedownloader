@@ -1,35 +1,43 @@
 #!/bin/bash
 
+# Get input parameters from Taverna
+CONFIGFILE=$1
+YOUSEENAME=$2
+LOCALNAME=$3
+
 ### Example input-parameters
-# CONFIGFILE='./example-configfile.sh'
-#YOUSEENAME='TVT_20111123_212500_20111123_214500.mux'
+#CONFIGFILE='./example-configfile.sh'
+#YOUSEENAME='DR_20111123_212500_20111123_214500.mux'
 #LOCALNAME='dr1_20111123212500_20111123214500.mux'
 #
-### Output goes to stdout
+# Output goes to stdout
 
-# mockup config
-LOCALPATH='/home/jeppe/projects/yousee-file-downloader'
-#...fjern evt / i slutning af path
 
-YOUSEE_URL_TO_FILE="http://canopus/yousee/${YOUSEENAME}"
-
+source $CONFIGFILE
+URL_TO_YOUSEE=${URL_TO_YOUSEE%/}  # remove trailing slash if there is one
+LOCALPATH=${LOCALPATH%/}  # remove trailing slash if there is one
+YOUSEE_URL_TO_FILE="${URL_TO_YOUSEE}/${YOUSEENAME}"
+echo $YOUSEE_URL_TO_FILE
 
 # Relevant curl options:
 # -f  To make HTTP errors turn into a curl error 22, mentioning the HTTP error number
 # -s  Silent mode
 # -S  Show errors when in silent mode
 
-# Any errors of md5sum go to &4 (and fizzle)
-# Any remaining errors go to $error
-exec 3>&1 4>&2  # Set up extra file descriptors
-ERRORS=$( { curl -f -s -S $YOUSEE_URL_TO_FILE | tee "${LOCALPATH}/${LOCALNAME}" | md5sum 2>&4 1>"${LOCALPATH}/${LOCALNAME}.md5"; } 2>&1 4>&1 )
-exec 3>&- 4>&-  # Release the extra file descriptors
+# Any errors of md5sum go temporarily to &3 in order to not overwrite errors from curl
+# All errors are collected in ERRORS
+exec 3>&1  # Set up extra file descriptor
+ERRORS=$( { curl -f -s -S "$YOUSEE_URL_TO_FILE" | tee "${LOCALPATH}/${LOCALNAME}" | md5sum 2>&3 1>"${LOCALPATH}/${LOCALNAME}.md5"; } 2>&1 3>&1 )
+exec 3>&-  # Release the extra file descriptor
 
 ERRORS_LENGTH=${#ERRORS}
 
 if [ "$ERRORS_LENGTH" -gt "0" ]; then
-	echo 'YouSee-downloader failed:'
-	echo "\"${ERRORS}\""
+	echo 'YouSee-downloader failed:' >&2
+	echo "$ERRORS" >&2
+	echo "URL: $YOUSEE_URL_TO_FILE" >&2
+	rm "${LOCALPATH}/${LOCALNAME}" >/dev/null 2>/dev/null
+	rm "${LOCALPATH}/${LOCALNAME}.md5" >/dev/null 2>/dev/null
 	exit 13
 else
 	FILESIZE=$(stat -c%s "${LOCALPATH}/${LOCALNAME}")
@@ -38,8 +46,7 @@ else
 	echo "   \"checksum\" : \"`cat ${LOCALPATH}/${LOCALNAME}.md5 | sed 's| .*||'`\","
 	echo "   \"fileSize\" : $FILESIZE"
 	echo '}'
+	rm "${LOCALPATH}/${LOCALNAME}.md5" >/dev/null 2>/dev/null
+	exit 0
 fi
-
-rm "${LOCALPATH}/${LOCALNAME}.md5"
-exit 0
 
