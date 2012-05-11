@@ -54,8 +54,8 @@ if [ "$ERROR_CODE" -eq "404" ]; then
 	echo '{'
 	echo "   \"queued\":"
 	echo '   {'
-	echo "      \"youseeName\" : ${YOUSEENAME},"
-	echo "      \"localName\" : $LOCALNAME"
+	echo "      \"youseeName\" : \"${YOUSEENAME}\","
+	echo "      \"localName\" : \"$LOCALNAME\""
 	echo '   }'
 	echo '}'
 	rm "${LOCALPATH}/${LOCALNAME}" >/dev/null 2>/dev/null
