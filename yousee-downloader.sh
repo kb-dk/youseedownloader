@@ -32,6 +32,7 @@ exec 3>&-  # Release the extra file descriptor
 ERRORS_LENGTH=${#ERRORS}
 
 if [ "$ERRORS_LENGTH" -eq "0" ]; then
+	# Content was downloadable
 	FILESIZE=$(stat -c%s "${LOCALPATH}/${LOCALNAME}")
 	echo '{'
 	echo '   "downloaded":'
@@ -60,7 +61,7 @@ if [ "$ERROR_CODE" -eq "404" ]; then
 	echo '}'
 	rm "${LOCALPATH}/${LOCALNAME}" >/dev/null 2>/dev/null
 	rm "${LOCALPATH}/${LOCALNAME}.md5" >/dev/null 2>/dev/null
-	exit 0
+	exit 42
 fi
 
 # Ok, now we know it's actually a real error
