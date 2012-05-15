@@ -1,0 +1,21 @@
+<assembly>
+	
+    <formats>
+        <format>zip</format>
+    </formats>
+	<includeBaseDirectory>false</includeBaseDirectory>
+    <fileSets>
+
+
+        <fileSet>
+            <outputDirectory></outputDirectory>
+            <directory>src/main/scripts</directory>
+        </fileSet>
+     
+    </fileSets>
+
+
+
+</assembly>
+
+
