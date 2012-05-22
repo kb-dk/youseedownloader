@@ -3,6 +3,8 @@
 #MUX=DR1_20111123_212500_20111123_214500.mux
 MUX=DRtest_20111123_212500_20111123_214500.mux
 
+PATH_INFO=`echo "$PATH_INFO" | tr '[:lower:]' '[:upper:]'`
+
 case "$PATH_INFO" in
     /DR*)
 	echo "Content-type: application/octet-stream"
