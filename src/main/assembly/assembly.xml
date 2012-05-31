@@ -1,5 +1,6 @@
 <assembly>
-	
+
+    <id>bundle</id>
     <formats>
         <format>zip</format>
     </formats>
@@ -9,9 +10,10 @@
 
         <fileSet>
             <outputDirectory></outputDirectory>
-            <directory>src/main/scripts</directory>
+            <directory>src/main/script</directory>
+            <fileMode>0755</fileMode>
         </fileSet>
-     
+
     </fileSets>
 
 
