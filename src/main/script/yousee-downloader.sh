@@ -97,7 +97,7 @@ if [ -z "$ERRORS" ]; then
         echo '   "downloaded":'
         echo '   {'
         echo "      \"localFileUrl\" : \"file://${LOCALPATH}/${LOCALNAME}\","
-        echo "      \"checksum\" : $OURCHECKSUM,"
+        echo "      \"checksum\" : \"$OURCHECKSUM\","
         echo "      \"fileSize\" : $FILESIZE"
         echo '   }'
         echo '}'
