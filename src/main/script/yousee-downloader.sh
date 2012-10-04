@@ -38,13 +38,13 @@ fi
 
 URL_TO_YOUSEE=${URL_TO_YOUSEE%/}  # remove trailing slash if there is one
 LOCALPATH=${LOCALPATH%/}          # remove trailing slash if there is one
-YOUSEE_URL_TO_FILE="${URL_TO_YOUSEE}/${YOUSEENAME}"
+YOUSEE_URL_TO_FILE="${URL_TO_YOUSEE}/${YOUSEENAME}?md5=yes"
 
 function isOK(){
     OURCHECKSUM=`cat ${LOCALPATH}/${LOCALNAME}.md5 | cut -d' ' -f1` 2>/dev/null
     THEIRCHECKSUM=`cat ${LOCALPATH}/${LOCALNAME}.headers  | grep -i "content-md5:" | cut -d' ' -f2 |  sed 's/\s*$//g' | base64 -d` 2>/dev/null
     LOCALCHECKSUM=`md5sum ${LOCALPATH}/${LOCALNAME} | cut -d' ' -f1` 2>/dev/null
-    if [ $OURCHECKSUM -a $OURCHECKSUM == $THEIRCHECKSUM -a $OURCHECKSUM == $LOCALCHECKSUM -a $THEIRCHECKSUM == $LOCALCHECKSUM ];
+    if [  "$OURCHECKSUM" -a "$OURCHECKSUM" == "$THEIRCHECKSUM" -a "$OURCHECKSUM" == "$LOCALCHECKSUM" -a "$THEIRCHECKSUM" == "$LOCALCHECKSUM" ];
     then
         return 0
     else
