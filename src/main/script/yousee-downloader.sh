@@ -40,11 +40,38 @@ URL_TO_YOUSEE=${URL_TO_YOUSEE%/}  # remove trailing slash if there is one
 LOCALPATH=${LOCALPATH%/}          # remove trailing slash if there is one
 YOUSEE_URL_TO_FILE="${URL_TO_YOUSEE}/${YOUSEENAME}?md5=yes"
 
-function isOK(){
-    OURCHECKSUM=`cat ${LOCALPATH}/${LOCALNAME}.md5 | cut -d' ' -f1` 2>/dev/null
+
+
+THEIRCHECKSUM=""
+STREAMCHECKSUM=""
+FILECHECKSUM=""
+
+
+
+function checkExistingFile(){
+    STREAMCHECKSUM=`cat ${LOCALPATH}/${LOCALNAME}.md5 | cut -d' ' -f1` 2>/dev/null
     THEIRCHECKSUM=`cat ${LOCALPATH}/${LOCALNAME}.headers  | grep -i "content-md5:" | cut -d' ' -f2 |  sed 's/\s*$//g' | base64 -d` 2>/dev/null
-    LOCALCHECKSUM=`md5sum ${LOCALPATH}/${LOCALNAME} | cut -d' ' -f1` 2>/dev/null
-    if [  "$OURCHECKSUM" -a "$OURCHECKSUM" == "$THEIRCHECKSUM" -a "$OURCHECKSUM" == "$LOCALCHECKSUM" -a "$THEIRCHECKSUM" == "$LOCALCHECKSUM" ];
+    FILECHECKSUM=`md5sum ${LOCALPATH}/${LOCALNAME} | cut -d' ' -f1` 2>/dev/null
+    if [ -z "$THEIRCHECKSUM" ]; then
+        #yousee failed to provide a checksum, ignore warning for now
+        THEIRCHECKSUM=$STREAMCHECKSUM
+    fi
+    if [  "$STREAMCHECKSUM" -a "$STREAMCHECKSUM" == "$THEIRCHECKSUM" -a "$STREAMCHECKSUM" == "$FILECHECKSUM" -a "$THEIRCHECKSUM" == "$FILECHECKSUM" ];
+    then
+        return 0
+    else
+        return 1
+    fi
+}
+
+function verifyDownload(){
+    STREAMCHECKSUM=`cat ${LOCALPATH}/${LOCALNAME}.md5 | cut -d' ' -f1` 2>/dev/null
+    THEIRCHECKSUM=`cat ${LOCALPATH}/${LOCALNAME}.headers  | grep -i "content-md5:" | cut -d' ' -f2 |  sed 's/\s*$//g' | base64 -d` 2>/dev/null
+    if [ -z "$THEIRCHECKSUM" ]; then
+        #yousee failed to provide a checksum, ignore warning for now
+        THEIRCHECKSUM=$STREAMCHECKSUM
+    fi
+    if [  "$STREAMCHECKSUM" -a "$STREAMCHECKSUM" == "$THEIRCHECKSUM" ];
     then
         return 0
     else
@@ -54,11 +81,11 @@ function isOK(){
 
 DOWNLOAD="yes"
 if [ -e ${LOCALPATH}/${LOCALNAME} ]; then
-    if ! isOK ; then
-        echo "File was found locally, but checksums do not match. Redownload" >&2
-        echo "checksum on stream: $OURCHECKSUM" >&2
+    if ! checkExistingFile ; then
+        echo "File was found locally, but checksums do not match. File will be redownloaded" >&2
+        echo "checksum on stream: $STREAMCHECKSUM" >&2
         echo "checksum from yousee: $THEIRCHECKSUM" >&2
-        echo "checksum calculated on disk: $LOCALCHECKSUM" >&2
+        echo "checksum calculated on disk: $FILECHECKSUM" >&2
     else
         DOWNLOAD=""
     fi
@@ -70,6 +97,8 @@ if [ $DOWNLOAD ]; then
     # -f  To make HTTP errors turn into a curl error 22, mentioning the HTTP error number
     # -s  Silent mode
     # -S  Show errors when in silent mode
+    # -D write header dump to this file
+    # --header Send this header
 
     # Any errors of md5sum go temporarily to &3 in order to not overwrite errors from curl
     # All errors are collected in ERRORS
@@ -78,16 +107,15 @@ if [ $DOWNLOAD ]; then
     exec 3>&-  # Release the extra file descriptor
 
     # The above was inspired by http://stackoverflow.com/questions/962255/how-to-store-standard-error-in-a-variable-in-a-bash-script
-
 fi
 
 
 if [ -z "$ERRORS" ]; then
-    if ! isOK; then
-        echo "File was downloaded but checksums do not match. despair" >&2
-        echo "checksum on stream: $OURCHECKSUM" >&2
+    if ! verifyDownload; then
+        echo "File was downloaded but checksums do not match. \n The file will not be redownloaded, so this error will
+        not go away. \n Get an administrator to delete the file, and schedule this download again." >&2
+        echo "checksum on stream: $STREAMCHECKSUM" >&2
         echo "checksum from yousee: $THEIRCHECKSUM" >&2
-        echo "checksum calculated on disk: $LOCALCHECKSUM" >&2
         exit 1
     else
         # No errors, so content was downloadable
@@ -97,7 +125,7 @@ if [ -z "$ERRORS" ]; then
         echo '   "downloaded":'
         echo '   {'
         echo "      \"localFileUrl\" : \"file://${LOCALPATH}/${LOCALNAME}\","
-        echo "      \"checksum\" : \"$OURCHECKSUM\","
+        echo "      \"checksum\" : \"$STREAMCHECKSUM\","
         echo "      \"fileSize\" : $FILESIZE"
         echo '   }'
         echo '}'
@@ -106,14 +134,22 @@ if [ -z "$ERRORS" ]; then
     fi
 fi
 
-# No more use for these
-rm -rf "${LOCALPATH}/${LOCALNAME}" >/dev/null 2>/dev/null
-rm -rf "${LOCALPATH}/${LOCALNAME}.md5" >/dev/null 2>/dev/null
-rm -rf "${LOCALPATH}/${LOCALNAME}.headers" >/dev/null 2>/dev/null
+#So, $ERRORS have content, we have failed to download
 
+
+
+
+
+
+#TODO read header instead
 # So... there are errors. Pick out the error code and act on it
-ERROR_CODE_LINE=`echo $ERRORS | grep 'The requested URL returned error' `
-ERROR_CODE=${ERROR_CODE_LINE:(-3)}
+ERROR_CODE=$(head -1 "${LOCALPATH}/${LOCALNAME}.headers" | cut -d' ' -f2)
+
+# No more use for these
+#rm -f "${LOCALPATH}/${LOCALNAME}" >/dev/null 2>/dev/null
+#rm -f "${LOCALPATH}/${LOCALNAME}.md5" >/dev/null 2>/dev/null
+#rm -f "${LOCALPATH}/${LOCALNAME}.headers" >/dev/null 2>/dev/null
+
 
 if [ "$ERROR_CODE" -eq "404" ]; then
 	# Content is not on primary server, but is on secondary. Try again later.
@@ -125,16 +161,16 @@ if [ "$ERROR_CODE" -eq "404" ]; then
 	echo '   }'
 	echo '}'
 	exit 42
+else
+    # Ok, now we know it's actually a real error
+    echo 'YouSee-downloader failed:' >&2
+    echo "$ERRORS" >&2
+    echo "URL: $YOUSEE_URL_TO_FILE" >&2
+    echo ""  >&2
+    echo "Guide to YouSee error codes: (you got ${ERROR_CODE})" >&2
+    echo '400 = Bad information in URL (for instance, unknown channel id)' >&2
+    echo '410 = Content is not available on any archive server' >&2
+    exit 13
 fi
-
-# Ok, now we know it's actually a real error
-echo 'YouSee-downloader failed:' >&2
-echo "$ERRORS" >&2
-echo "URL: $YOUSEE_URL_TO_FILE" >&2
-echo ""  >&2
-echo "Guide to YouSee error codes: (you got ${ERROR_CODE})" >&2
-echo '400 = Bad information in URL (for instance, unknown channel id)' >&2
-echo '410 = Content is not available on any archive server' >&2
-exit 13
 
 

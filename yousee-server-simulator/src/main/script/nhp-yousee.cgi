@@ -9,33 +9,37 @@ QUERY_STRING=`echo "$QUERY_STRING" | tr '[:upper:]' '[:lower:]'`
 
 RESPONSE="200"
 
-case "$PATH_INFO" in
-    /KANAL6_*)
-        MUX="KANAL6_20121008_140000_20121008_150000.mux"
-	    ;;
-    /LORRY_*)
-    	MUX="LORRY_20121008_140000_20121008_150000.mux"
-	    ;;
-    /RADIO100_*)
-	    MUX="RADIO100_20121008_140000_20121008_150000.mux"
-	    ;;
-    /DRP8_*)
-	    MUX="DRP8_20121008_140000_20121008_150000.mux"
-	    ;;
-    /DR1_*)
-	    MUX="DR1_20121008_120000_20121008_130000.mux"
-	    ;;
-    /CANAL9_*)
-	    MUX="CANAL9_20121008_140000_20121008_150000.mux"
-	    ;;
-    /ANIMAL_*)
-	    MUX="ANIMAL_20121008_140000_20121008_150000.mux"
-	    ;;
-    *)
-        MUX="/dev/null"
-	    RESPONSE="400"
-	    ;;
-esac	
+if [ -e "${PATH_INFO:1}" ]; then
+    MUX="${PATH_INFO:1}"
+else
+    case "$PATH_INFO" in
+        /KANAL6_*)
+            MUX="KANAL6_20121008_140000_20121008_150000.mux"
+            ;;
+        /LORRY_*)
+            MUX="LORRY_20121008_140000_20121008_150000.mux"
+            ;;
+        /RADIO100_*)
+            MUX="RADIO100_20121008_140000_20121008_150000.mux"
+            ;;
+        /DRP8_*)
+            MUX="DRP8_20121008_140000_20121008_150000.mux"
+            ;;
+        /DR1_*)
+            MUX="DR1_20121008_120000_20121008_130000.mux"
+            ;;
+        /CANAL9_*)
+            MUX="CANAL9_20121008_140000_20121008_150000.mux"
+            ;;
+        /ANIMAL_*)
+            MUX="ANIMAL_20121008_140000_20121008_150000.mux"
+            ;;
+        *)
+            MUX="/dev/null"
+            RESPONSE="400"
+            ;;
+    esac
+fi
 
 if [ $QUERY_STRING == "md5=yes" -o $QUERY_STRING == "md5=true" -o $QUERY_STRING == "md5=1" -o $QUERY_STRING == "md5=on" ];
 then
