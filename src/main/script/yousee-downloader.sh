@@ -129,7 +129,6 @@ if [ -z "$ERRORS" ]; then
         echo "      \"fileSize\" : $FILESIZE"
         echo '   }'
         echo '}'
-        #rm "${LOCALPATH}/${LOCALNAME}.md5" >/dev/null 2>/dev/null
         exit 0
     fi
 fi
@@ -138,20 +137,17 @@ fi
 
 
 
-
-
-
-#TODO read header instead
 # So... there are errors. Pick out the error code and act on it
-ERROR_CODE=$(head -1 "${LOCALPATH}/${LOCALNAME}.headers" | cut -d' ' -f2)
+ERROR_CODE="$(head -1 \"${LOCALPATH}/${LOCALNAME}.headers\" | cut -d' ' -f2)"
 
+[ -z "$ERROR_CODE" ] && ERROR_CODE=500
 # No more use for these
 #rm -f "${LOCALPATH}/${LOCALNAME}" >/dev/null 2>/dev/null
 #rm -f "${LOCALPATH}/${LOCALNAME}.md5" >/dev/null 2>/dev/null
 #rm -f "${LOCALPATH}/${LOCALNAME}.headers" >/dev/null 2>/dev/null
 
 
-if [ "$ERROR_CODE" -eq "404" ]; then
+if [ $ERROR_CODE -eq 404 ]; then
 	# Content is not on primary server, but is on secondary. Try again later.
 	echo '{'
 	echo "   \"queued\":"
