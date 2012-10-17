@@ -91,6 +91,7 @@ if [ -e ${LOCALPATH}/${LOCALNAME} ]; then
     fi
 fi
 
+failed=0
 if [ $DOWNLOAD ]; then
 
     # Relevant curl options:
@@ -100,17 +101,11 @@ if [ $DOWNLOAD ]; then
     # -D write header dump to this file
     # --header Send this header
 
-    # Any errors of md5sum go temporarily to &3 in order to not overwrite errors from curl
-    # All errors are collected in ERRORS
-    exec 3>&1  # Set up extra file descriptor
-    ERRORS=$( { curl -D ${LOCALPATH}/${LOCALNAME}.headers -f -s -S --header "\"TE: trailers\"" "$YOUSEE_URL_TO_FILE" | tee "${LOCALPATH}/${LOCALNAME}" | md5sum 2>&3 1>"${LOCALPATH}/${LOCALNAME}.md5"; } 2>&1 3>&1 )
-    exec 3>&-  # Release the extra file descriptor
-
-    # The above was inspired by http://stackoverflow.com/questions/962255/how-to-store-standard-error-in-a-variable-in-a-bash-script
+    curl -D ${LOCALPATH}/${LOCALNAME}.headers -f -s -S --header "\"TE: trailers\"" "$YOUSEE_URL_TO_FILE" | tee "${LOCALPATH}/${LOCALNAME}" | md5sum -b >"${LOCALPATH}/${LOCALNAME}.md5";
+    failed=$(echo ${PIPESTATUS[@]}  | awk -v RS=" " '1' | sort -nr | head -1)
 fi
 
-
-if [ -z "$ERRORS" ]; then
+if [ $failed -eq 0 ]; then
     if ! verifyDownload; then
         echo "File was downloaded but checksums do not match. \n The file will not be redownloaded, so this error will
         not go away. \n Get an administrator to delete the file, and schedule this download again." >&2
@@ -133,18 +128,20 @@ if [ -z "$ERRORS" ]; then
     fi
 fi
 
-#So, $ERRORS have content, we have failed to download
+# So we have failed to download
 
 
+if [ -r "${LOCALPATH}/${LOCALNAME}.headers" ]; then
+    # So... there are errors. Pick out the error code and act on it
+    ERROR_CODE="$(head -1 \"${LOCALPATH}/${LOCALNAME}.headers\" | cut -d' ' -f2)"
+else
+    ERROR_CODE=$failed
+fi
 
-# So... there are errors. Pick out the error code and act on it
-ERROR_CODE="$(head -1 \"${LOCALPATH}/${LOCALNAME}.headers\" | cut -d' ' -f2)"
-
-[ -z "$ERROR_CODE" ] && ERROR_CODE=500
 # No more use for these
-#rm -f "${LOCALPATH}/${LOCALNAME}" >/dev/null 2>/dev/null
-#rm -f "${LOCALPATH}/${LOCALNAME}.md5" >/dev/null 2>/dev/null
-#rm -f "${LOCALPATH}/${LOCALNAME}.headers" >/dev/null 2>/dev/null
+rm -f "${LOCALPATH}/${LOCALNAME}" >/dev/null 2>/dev/null
+rm -f "${LOCALPATH}/${LOCALNAME}.md5" >/dev/null 2>/dev/null
+rm -f "${LOCALPATH}/${LOCALNAME}.headers" >/dev/null 2>/dev/null
 
 
 if [ $ERROR_CODE -eq 404 ]; then
@@ -160,7 +157,6 @@ if [ $ERROR_CODE -eq 404 ]; then
 else
     # Ok, now we know it's actually a real error
     echo 'YouSee-downloader failed:' >&2
-    echo "$ERRORS" >&2
     echo "URL: $YOUSEE_URL_TO_FILE" >&2
     echo ""  >&2
     echo "Guide to YouSee error codes: (you got ${ERROR_CODE})" >&2
