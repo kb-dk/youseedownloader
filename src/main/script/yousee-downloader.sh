@@ -100,9 +100,13 @@ if [ $DOWNLOAD ]; then
     # -S  Show errors when in silent mode
     # -D write header dump to this file
     # --header Send this header
-
-    curl -D ${LOCALPATH}/${LOCALNAME}.headers -f -s -S --header "\"TE: trailers\"" "$YOUSEE_URL_TO_FILE" | tee "${LOCALPATH}/${LOCALNAME}" | md5sum -b >"${LOCALPATH}/${LOCALNAME}.md5";
+    errorLogFile=$(mktemp)
+    curl -D ${LOCALPATH}/${LOCALNAME}.headers -f -s -S --header "\"TE: trailers\"" "$YOUSEE_URL_TO_FILE" 2>>$errorLogFile \
+                 | tee "${LOCALPATH}/${LOCALNAME}" 2>>$errorLogFile | md5sum -b >"${LOCALPATH}/${LOCALNAME}.md5" 2>>$errorLogFile;
     failed=$(echo ${PIPESTATUS[@]}  | awk -v RS=" " '1' | sort -nr | head -1)
+    errorLog=$(cat $errorLogFile)
+    rm $errorLogFile
+
 fi
 
 if [ $failed -eq 0 ]; then
@@ -135,7 +139,10 @@ if [ -r "${LOCALPATH}/${LOCALNAME}.headers" ]; then
     # So... there are errors. Pick out the error code and act on it
     ERROR_CODE="$(head -1 \"${LOCALPATH}/${LOCALNAME}.headers\" | cut -d' ' -f2)"
 else
-    ERROR_CODE=$failed
+    ERROR_CODE=$(echo $errorLog | grep "The requested URL returned error:" | cut -d':' -f3)
+    if [ $? -gt 0 ]; then
+        ERROR_CODE=$failed
+    fi
 fi
 
 # No more use for these
@@ -144,25 +151,34 @@ rm -f "${LOCALPATH}/${LOCALNAME}.md5" >/dev/null 2>/dev/null
 rm -f "${LOCALPATH}/${LOCALNAME}.headers" >/dev/null 2>/dev/null
 
 
-if [ $ERROR_CODE -eq 404 ]; then
-	# Content is not on primary server, but is on secondary. Try again later.
-	echo '{'
-	echo "   \"queued\":"
-	echo '   {'
-	echo "      \"youseeName\" : \"${YOUSEENAME}\","
-	echo "      \"localName\" : \"$LOCALNAME\""
-	echo '   }'
-	echo '}'
-	exit 42
-else
-    # Ok, now we know it's actually a real error
-    echo 'YouSee-downloader failed:' >&2
-    echo "URL: $YOUSEE_URL_TO_FILE" >&2
-    echo ""  >&2
-    echo "Guide to YouSee error codes: (you got ${ERROR_CODE})" >&2
-    echo '400 = Bad information in URL (for instance, unknown channel id)' >&2
-    echo '410 = Content is not available on any archive server' >&2
-    exit 13
-fi
-
-
+case $ERROR_CODE in
+    400)
+        # Ok, now we know it's actually a real error
+        echo "URL: $YOUSEE_URL_TO_FILE" >&2
+        echo 'Bad information in URL (for instance, unknown channel id)' >&2
+        echo $errorLog >&2
+        exit 400
+        ;;
+    404)
+        # Content is not on primary server, but is on secondary. Try again later.
+        echo '{'
+        echo "   \"queued\":"
+        echo '   {'
+        echo "      \"youseeName\" : \"${YOUSEENAME}\","
+        echo "      \"localName\" : \"$LOCALNAME\""
+        echo '   }'
+        echo '}'
+        exit 42
+        ;;
+    410)
+        # Ok, now we know it's actually a real error
+        echo "URL: $YOUSEE_URL_TO_FILE" >&2
+        echo 'Content is not available on any archive server' >&2
+        echo $errorLog >&2
+        exit 410
+        ;;
+    *)
+        echo "URL: $YOUSEE_URL_TO_FILE" >&2
+        echo $errorLog >&2
+        exit 500
+esac
