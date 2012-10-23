@@ -50,13 +50,15 @@ FILECHECKSUM=""
 
 function checkExistingFile(){
     STREAMCHECKSUM=`cat ${LOCALPATH}/${LOCALNAME}.md5 | cut -d' ' -f1` 2>/dev/null
-    THEIRCHECKSUM=`cat ${LOCALPATH}/${LOCALNAME}.headers  | grep -i "content-md5:" | cut -d' ' -f2 |  sed 's/\s*$//g' | base64 -d` 2>/dev/null
+    THEIRCHECKSUM=`cat ${LOCALPATH}/${LOCALNAME}.headers  | grep -i "content-md5:" | cut -d' ' -f2 |  sed 's/\s*$//g'` 2>/dev/null
     FILECHECKSUM=`md5sum ${LOCALPATH}/${LOCALNAME} | cut -d' ' -f1` 2>/dev/null
     if [ -z "$THEIRCHECKSUM" ]; then
         #yousee failed to provide a checksum, ignore warning for now
         THEIRCHECKSUM=$STREAMCHECKSUM
     fi
-    if [  "$STREAMCHECKSUM" -a "$STREAMCHECKSUM" == "$THEIRCHECKSUM" -a "$STREAMCHECKSUM" == "$FILECHECKSUM" -a "$THEIRCHECKSUM" == "$FILECHECKSUM" ];
+    if [ -n "$STREAMCHECKSUM" -a "$STREAMCHECKSUM" == "$THEIRCHECKSUM" \
+                            -a "$STREAMCHECKSUM" == "$FILECHECKSUM" \
+                            -a "$THEIRCHECKSUM" == "$FILECHECKSUM" ];
     then
         return 0
     else
@@ -66,12 +68,12 @@ function checkExistingFile(){
 
 function verifyDownload(){
     STREAMCHECKSUM=`cat ${LOCALPATH}/${LOCALNAME}.md5 | cut -d' ' -f1` 2>/dev/null
-    THEIRCHECKSUM=`cat ${LOCALPATH}/${LOCALNAME}.headers  | grep -i "content-md5:" | cut -d' ' -f2 |  sed 's/\s*$//g' | base64 -d` 2>/dev/null
+    THEIRCHECKSUM=`cat ${LOCALPATH}/${LOCALNAME}.headers  | grep -i "content-md5:" | cut -d' ' -f2 |  sed 's/\s*$//g'` 2>/dev/null
     if [ -z "$THEIRCHECKSUM" ]; then
         #yousee failed to provide a checksum, ignore warning for now
         THEIRCHECKSUM=$STREAMCHECKSUM
     fi
-    if [  "$STREAMCHECKSUM" -a "$STREAMCHECKSUM" == "$THEIRCHECKSUM" ];
+    if [ -n "$STREAMCHECKSUM" -a "$STREAMCHECKSUM" == "$THEIRCHECKSUM" ];
     then
         return 0
     else
@@ -83,9 +85,9 @@ DOWNLOAD="yes"
 if [ -e ${LOCALPATH}/${LOCALNAME} ]; then
     if ! checkExistingFile ; then
         echo "File was found locally, but checksums do not match. File will be redownloaded" >&2
-        echo "checksum on stream: $STREAMCHECKSUM" >&2
-        echo "checksum from yousee: $THEIRCHECKSUM" >&2
-        echo "checksum calculated on disk: $FILECHECKSUM" >&2
+        echo "checksum on stream: '$STREAMCHECKSUM'" >&2
+        echo "checksum from yousee: '$THEIRCHECKSUM'" >&2
+        echo "checksum calculated on disk: '$FILECHECKSUM'" >&2
     else
         DOWNLOAD=""
     fi
@@ -101,9 +103,18 @@ if [ $DOWNLOAD ]; then
     # -D write header dump to this file
     # --header Send this header
     errorLogFile=$(mktemp)
+    myStatus=0
     curl -D ${LOCALPATH}/${LOCALNAME}.headers -f -s -S --header "\"TE: trailers\"" "$YOUSEE_URL_TO_FILE" 2>>$errorLogFile \
                  | tee "${LOCALPATH}/${LOCALNAME}" 2>>$errorLogFile | md5sum -b >"${LOCALPATH}/${LOCALNAME}.md5" 2>>$errorLogFile;
-    failed=$(echo ${PIPESTATUS[@]}  | awk -v RS=" " '1' | sort -nr | head -1)
+    for i in ${PIPESTATUS[@]}; do
+        if [ $i -ne 0 ]; then
+            myStatus=$i;
+            break;
+        fi;
+    done;
+
+    #failed=$(echo ${PIPESTATUS[@]}  | awk -v RS=" " '1' | sort -nr | head -1)
+    failed=$myStatus
     errorLog=$(cat $errorLogFile)
     rm $errorLogFile
 
@@ -113,8 +124,8 @@ if [ $failed -eq 0 ]; then
     if ! verifyDownload; then
         echo "File was downloaded but checksums do not match. \n The file will not be redownloaded, so this error will
         not go away. \n Get an administrator to delete the file, and schedule this download again." >&2
-        echo "checksum on stream: $STREAMCHECKSUM" >&2
-        echo "checksum from yousee: $THEIRCHECKSUM" >&2
+        echo "checksum on stream: '$STREAMCHECKSUM'" >&2
+        echo "checksum from yousee: '$THEIRCHECKSUM'" >&2
         exit 1
     else
         # No errors, so content was downloadable
@@ -139,7 +150,7 @@ if [ -r "${LOCALPATH}/${LOCALNAME}.headers" ]; then
     # So... there are errors. Pick out the error code and act on it
     ERROR_CODE="$(head -1 \"${LOCALPATH}/${LOCALNAME}.headers\" | cut -d' ' -f2)"
 else
-    ERROR_CODE=$(echo $errorLog | grep "The requested URL returned error:" | cut -d':' -f3)
+    ERROR_CODE=$(echo $errorLog | grep "The requested URL returned error:" | cut -d':' -f3|sed 's/\s//g' -)
     if [ $? -gt 0 ]; then
         ERROR_CODE=$failed
     fi
