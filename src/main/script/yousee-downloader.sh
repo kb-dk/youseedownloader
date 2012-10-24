@@ -53,8 +53,7 @@ function checkExistingFile(){
     THEIRCHECKSUM=`cat ${LOCALPATH}/${LOCALNAME}.headers  | grep -i "content-md5:" | cut -d' ' -f2 |  sed 's/\s*$//g'` 2>/dev/null
     FILECHECKSUM=`md5sum ${LOCALPATH}/${LOCALNAME} | cut -d' ' -f1` 2>/dev/null
     if [ -z "$THEIRCHECKSUM" ]; then
-        #yousee failed to provide a checksum, ignore warning for now
-        THEIRCHECKSUM=$STREAMCHECKSUM
+        echo "No checksum provided by Yousee" >&2
     fi
     if [ -n "$STREAMCHECKSUM" -a "$STREAMCHECKSUM" == "$THEIRCHECKSUM" \
                             -a "$STREAMCHECKSUM" == "$FILECHECKSUM" \
@@ -70,8 +69,7 @@ function verifyDownload(){
     STREAMCHECKSUM=`cat ${LOCALPATH}/${LOCALNAME}.md5 | cut -d' ' -f1` 2>/dev/null
     THEIRCHECKSUM=`cat ${LOCALPATH}/${LOCALNAME}.headers  | grep -i "content-md5:" | cut -d' ' -f2 |  sed 's/\s*$//g'` 2>/dev/null
     if [ -z "$THEIRCHECKSUM" ]; then
-        #yousee failed to provide a checksum, ignore warning for now
-        THEIRCHECKSUM=$STREAMCHECKSUM
+        echo "No checksum provided by Yousee" >&2
     fi
     if [ -n "$STREAMCHECKSUM" -a "$STREAMCHECKSUM" == "$THEIRCHECKSUM" ];
     then
