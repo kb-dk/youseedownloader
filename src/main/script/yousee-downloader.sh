@@ -47,24 +47,6 @@ STREAMCHECKSUM=""
 FILECHECKSUM=""
 
 
-
-function checkExistingFile(){
-    STREAMCHECKSUM=`cat ${LOCALPATH}/${LOCALNAME}.md5 | cut -d' ' -f1` 2>/dev/null
-    THEIRCHECKSUM=`cat ${LOCALPATH}/${LOCALNAME}.headers  | grep -i "content-md5:" | cut -d' ' -f2 |  sed 's/\s*$//g'` 2>/dev/null
-    FILECHECKSUM=`md5sum ${LOCALPATH}/${LOCALNAME} | cut -d' ' -f1` 2>/dev/null
-    if [ -z "$THEIRCHECKSUM" ]; then
-        echo "No checksum provided by Yousee" >&2
-    fi
-    if [ -n "$STREAMCHECKSUM" -a "$STREAMCHECKSUM" == "$THEIRCHECKSUM" \
-                            -a "$STREAMCHECKSUM" == "$FILECHECKSUM" \
-                            -a "$THEIRCHECKSUM" == "$FILECHECKSUM" ];
-    then
-        return 0
-    else
-        return 1
-    fi
-}
-
 function verifyDownload(){
     STREAMCHECKSUM=`cat ${LOCALPATH}/${LOCALNAME}.md5 | cut -d' ' -f1` 2>/dev/null
     THEIRCHECKSUM=`cat ${LOCALPATH}/${LOCALNAME}.headers  | grep -i "content-md5:" | cut -d' ' -f2 |  sed 's/\s*$//g'` 2>/dev/null
@@ -81,11 +63,10 @@ function verifyDownload(){
 
 DOWNLOAD="yes"
 if [ -e ${LOCALPATH}/${LOCALNAME} ]; then
-    if ! checkExistingFile ; then
+    if ! verifyDownload ; then
         echo "File was found locally, but checksums do not match. File will be redownloaded" >&2
         echo "checksum on stream: '$STREAMCHECKSUM'" >&2
         echo "checksum from yousee: '$THEIRCHECKSUM'" >&2
-        echo "checksum calculated on disk: '$FILECHECKSUM'" >&2
     else
         DOWNLOAD=""
     fi
