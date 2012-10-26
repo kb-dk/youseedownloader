@@ -17,9 +17,9 @@
         <module>yousee-server-simulator</module>
     </modules>
     <scm>
-        <connection>scm:git:git://github.com/statsbiblioteket/youseedownloader.git</connection>
-        <url>scm:git:git://github.com/statsbiblioteket/youseedownloader.git</url>
-        <developerConnection>scm:git:git://github.com/statsbiblioteket/youseedownloader.git</developerConnection>
+        <connection>scm:git:git@github.com:statsbiblioteket/youseedownloader.git</connection>
+        <url>scm:git:git@github.com:statsbiblioteket/youseedownloader.git</url>
+        <developerConnection>scm:git:git@github.com:statsbiblioteket/youseedownloader.git</developerConnection>
     </scm>
 
   <repositories>
