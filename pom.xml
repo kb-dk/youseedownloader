@@ -10,7 +10,7 @@
 
     <groupId>dk.statsbiblioteket.medieplatform</groupId>
     <artifactId>yousee-downloader</artifactId>
-    <version>2.2-SNAPSHOT</version>
+    <version>2.2</version>
 	<packaging>pom</packaging>
 
     <modules>
