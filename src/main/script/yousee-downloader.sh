@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -o pipefail
+
 # Get input parameters from Taverna
 CONFIGFILE=$1
 YOUSEENAME=$2
@@ -48,8 +50,8 @@ FILECHECKSUM=""
 
 
 function verifyDownload(){
-    STREAMCHECKSUM=`cat ${LOCALPATH}/${LOCALNAME}.md5 | cut -d' ' -f1` 2>/dev/null
-    THEIRCHECKSUM=`cat ${LOCALPATH}/${LOCALNAME}.headers  | grep -i "content-md5:" | cut -d' ' -f2 |  sed 's/\s*$//g'` 2>/dev/null
+    STREAMCHECKSUM=$(cat ${LOCALPATH}/${LOCALNAME}.md5 | cut -d' ' -f) 2>/dev/null
+    THEIRCHECKSUM=$(cat ${LOCALPATH}/${LOCALNAME}.headers  | grep -i "content-md5:" | cut -d' ' -f2 |  sed 's/\s*$//g') 2>/dev/null
     if [ -z "$THEIRCHECKSUM" ]; then
         echo "No checksum provided by Yousee" >&2
     fi
@@ -82,21 +84,11 @@ if [ $DOWNLOAD ]; then
     # -D write header dump to this file
     # --header Send this header
     errorLogFile=$(mktemp)
-    myStatus=0
     curl -D ${LOCALPATH}/${LOCALNAME}.headers -f -s -S --header "\"TE: trailers\"" "$YOUSEE_URL_TO_FILE" 2>>$errorLogFile \
                  | tee "${LOCALPATH}/${LOCALNAME}" 2>>$errorLogFile | md5sum -b >"${LOCALPATH}/${LOCALNAME}.md5" 2>>$errorLogFile;
-    for i in ${PIPESTATUS[@]}; do
-        if [ $i -ne 0 ]; then
-            myStatus=$i;
-            break;
-        fi;
-    done;
-
-    #failed=$(echo ${PIPESTATUS[@]}  | awk -v RS=" " '1' | sort -nr | head -1)
-    failed=$myStatus
+    failed=$?
     errorLog=$(cat $errorLogFile)
     rm $errorLogFile
-
 fi
 
 if [ $failed -eq 0 ]; then
