@@ -93,8 +93,8 @@ fi
 
 if [ $failed -eq 0 ]; then
     if ! verifyDownload; then
-        echo "File was downloaded but checksums do not match. \n The file will not be redownloaded, so this error will
-        not go away. \n Get an administrator to delete the file, and schedule this download again." >&2
+        #TODO THIS IS A LIE AND A CAEK
+        echo "File was downloaded but checksums do not match. Process aborted. File will be downloaded in next run. " >&2
         echo "checksum on stream: '$STREAMCHECKSUM'" >&2
         echo "checksum from yousee: '$THEIRCHECKSUM'" >&2
         exit 1
