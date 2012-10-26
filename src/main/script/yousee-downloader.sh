@@ -50,7 +50,7 @@ FILECHECKSUM=""
 
 
 function verifyDownload(){
-    STREAMCHECKSUM=$(cat ${LOCALPATH}/${LOCALNAME}.md5 | cut -d' ' -f) 2>/dev/null
+    STREAMCHECKSUM=$(cat ${LOCALPATH}/${LOCALNAME}.md5 | cut -d' ' -f1) 2>/dev/null
     THEIRCHECKSUM=$(cat ${LOCALPATH}/${LOCALNAME}.headers  | grep -i "content-md5:" | cut -d' ' -f2 |  sed 's/\s*$//g') 2>/dev/null
     if [ -z "$THEIRCHECKSUM" ]; then
         echo "No checksum provided by Yousee" >&2
