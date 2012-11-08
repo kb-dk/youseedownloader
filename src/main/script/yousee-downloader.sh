@@ -119,7 +119,7 @@ fi
 
 if [ -r "${LOCALPATH}/${LOCALNAME}.headers" ]; then
     # So... there are errors. Pick out the error code and act on it
-    ERROR_CODE="$(head -1 \"${LOCALPATH}/${LOCALNAME}.headers\" | cut -d' ' -f2)"
+    ERROR_CODE="$(head -1 "${LOCALPATH}/${LOCALNAME}.headers" | cut -d' ' -f2)"
 else
     ERROR_CODE=$(echo $errorLog | grep "The requested URL returned error:" | cut -d':' -f3|sed 's/\s//g' -)
     if [ $? -gt 0 ]; then
