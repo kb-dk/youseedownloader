@@ -5,12 +5,12 @@
     <parent>
         <groupId>dk.statsbiblioteket.medieplatform</groupId>
         <artifactId>yousee-downloader</artifactId>
-        <version>2.4-SNAPSHOT</version>
+        <version>2.4</version>
     </parent>
 
     <groupId>dk.statsbiblioteket.medieplatform</groupId>
     <artifactId>yousee-server-simulator</artifactId>
-    <version>2.4-SNAPSHOT</version>
+    <version>2.4</version>
 
     
 </project>
