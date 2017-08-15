@@ -84,7 +84,7 @@ if [ $DOWNLOAD ]; then
     # -D write header dump to this file
     # --header Send this header
     errorLogFile=$(mktemp)
-    newcurl -D ${LOCALPATH}/${LOCALNAME}.headers -f -s -S --header "\"TE: trailers\"" "$YOUSEE_URL_TO_FILE" 2>>$errorLogFile \
+    newcurl -D ${LOCALPATH}/${LOCALNAME}.headers -f -s -S --header "TE: trailers" "$YOUSEE_URL_TO_FILE" 2>>$errorLogFile \
                  | tee "${LOCALPATH}/${LOCALNAME}" 2>>$errorLogFile | md5sum -b >"${LOCALPATH}/${LOCALNAME}.md5" 2>>$errorLogFile;
     failed=$?
     errorLog=$(cat $errorLogFile)
